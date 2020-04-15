@@ -54,10 +54,10 @@ def Gsel_parallelogramic(nG, Lk1, Lk2):
     uv = np.dot(Lk1,Lk2)
 
     NGroot = int(np.sqrt(nG))
-    if np.mod(NGroot,2) == 0:
+    if np.mod(NGroot,2) == 1:
         NGroot -= 1
         
-    M = NGroot/2
+    M = int(NGroot/2)
 
     xG = range(-M,NGroot-M)
     G1,G2 = np.meshgrid(xG,xG,indexing='ij')

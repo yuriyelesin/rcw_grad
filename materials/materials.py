@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 c0 = 299792458.
 eV2freq= 2.417989261097518e+14
@@ -11,7 +12,10 @@ class silica:
         '''
         self.density = 2.203e3
 
-        tmp = open(filename,'r')
+        script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+        rel_path = filename
+        abs_file_path = os.path.join(script_dir, rel_path)
+        tmp = open(abs_file_path,'r')
         data = np.loadtxt(tmp)
         self.lam = data[:,0]
         self.n = data[:,1]
@@ -37,7 +41,10 @@ class silicon:
         '''
         self.density = 2.329e3
 
-        tmp = open(filename,'r')
+        script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+        rel_path = filename
+        abs_file_path = os.path.join(script_dir, rel_path)
+        tmp = open(abs_file_path,'r')
         data = np.loadtxt(tmp)
         self.lam = data[:,0]/1e10
         self.n = data[:,1]

@@ -262,6 +262,30 @@ class RCWA_obj:
             R = R*self.normalization
             T = T*self.normalization
         return R,T
+    
+    def RT_SolveComponents(self,normalize = 0):
+        '''
+        Reflection and transmission power computation
+        Returns 2R and 2T, following Victor's notation
+        Maybe because 2* makes S_z = 1 for H=1 in vacuum
+
+        if normalize = 1, it will be divided by n[0]*cos(theta)
+        '''
+        aN, b0 = SolveExterior(self.a0,self.bN,self.q_list,self.phi_list,self.kp_list,self.thickness_list)
+        fi,bi = GetZPoyntingFluxComponents(self.a0,b0,self.omega,self.kp_list[0],self.phi_list[0],self.q_list[0])
+        fe,be = GetZPoyntingFluxComponents(aN,self.bN,self.omega,self.kp_list[-1],self.phi_list[-1],self.q_list[-1])
+
+        if self.direction == 'forward':
+            R = np.real(-bi)
+            T = np.real(fe)
+        elif self.direction == 'backward':
+            R = np.real(fe)
+            T = np.real(-bi)
+
+        if normalize == 1:
+            R = R*self.normalization
+            T = T*self.normalization
+        return R,T
 
 
     def RT_Solvepart1(self):
@@ -315,7 +339,7 @@ class RCWA_obj:
             ai = self.a0
             bi = b0
 
-        elif which_layer == self.Layer_N:
+        elif which_layer == self.Layer_N - 1:
             aN, b0 = SolveExterior(self.a0,self.bN,self.q_list,self.phi_list,self.kp_list,self.thickness_list)
             ai = aN
             bi = self.bN
@@ -685,12 +709,46 @@ def GetZPoyntingFlux(ai,bi,omega,kp,phi,q):
 
     # diff = 0.5*(pb* Aa - Ab* pa)
     diff = 0.5*np.sum(np.conj(pb)*Aa-np.conj(Ab)*pa)
+#     diff_test = 0.5*np.sum(np.conj(pb)*Aa)-0.5*np.sum(np.conj(Ab)*pa)
     #forward = real(Aa* pa) + diff
+#     qq0 = np.conj(Aa)*pa
+#     qq1 = np.real(qq0)
+#     qq2 = max(qq1)
+#     qq8 = np.sum(qq0)
     forward = np.real(np.sum(np.conj(Aa)*pa)) + diff
     backward = -np.real(np.sum(np.conj(Ab)*pb)) + np.conj(diff)
 
     return forward, backward
     #return np.real(forward), np.real(backward)
+    
+def GetZPoyntingFluxComponents(ai,bi,omega,kp,phi,q):
+    '''
+     Returns 2S_z/A, following Victor's notation
+     Maybe because 2* makes S_z = 1 for H=1 in vacuum
+    '''
+    # A = kp phi inv(omega*q)
+    A = np.dot(np.dot(kp,phi),  np.diag(1./omega/q))
+
+    pa = np.dot(phi,ai)
+    pb = np.dot(phi,bi)
+    Aa = np.dot(A,ai)
+    Ab = np.dot(A,bi)
+    
+    alpha_h = pa
+    betta_h = pb
+    alpha_e = Aa
+    betta_e = Ab
+    
+
+    diff = np.conj(betta_h)*alpha_e - np.conj(betta_e)*alpha_h
+
+    forw =  (np.conj(alpha_e)*alpha_h + np.conj(alpha_h)*alpha_e) + diff
+    back = -(np.conj(betta_e)*betta_h + np.conj(betta_h)*betta_e) + np.conj(diff)
+
+    forw = np.real(forw)/2.0
+    back = np.real(back)/2.0
+    return forw, back
+    
 
 def Matrix_zintegral(q,thickness,shift=1e-12):
     ''' Generate matrix for z-integral
