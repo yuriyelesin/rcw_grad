@@ -160,7 +160,7 @@ dofs = np.concatenate((dof[0].flatten(), dof[1].flatten(), dof[2].flatten()))
 # Now add DOF to rcwa
 obj.GridLayer_getDOF(dofs.flatten())
 
-# obj.MakeExcitationPlanewave(p_amp,p_phase,s_amp,s_phase,order = 0, direction = 'forward')
+obj.MakeExcitationPlanewave(p_amp,p_phase,s_amp,s_phase,order = 0, direction = 'forward')
 # R,T= obj.RT_Solve(normalize=1)
 # print("R:",R,", T:",T,", A:",1-R-T)
 

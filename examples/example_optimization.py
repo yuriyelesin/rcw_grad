@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[13]:
+# In[1]:
 
 
 import os,sys
-Nthread = 4
+Nthread = 1
 os.environ["OMP_NUM_THREADS"] = str(Nthread) # export OMP_NUM_THREADS=1
 os.environ["OPENBLAS_NUM_THREADS"] = str(Nthread) # export OPENBLAS_NUM_THREADS=1
 os.environ["MKL_NUM_THREADS"] = str(Nthread) # export MKL_NUM_THREADS=1
@@ -17,16 +17,16 @@ from autograd import grad
 import nlopt, numpy as npf
 import matplotlib.pyplot as plt
 
-rpath = '/Users/weiliang/Documents/rcw_grad'
+rpath = '/home/wljin/MyLocal/RCWA/'
 sys.path.append(rpath)
 sys.path.append("../") 
-
 import use_autograd
 use_autograd.use = 1
 import rcwa
+from utils import test_grad
 
 
-# In[14]:
+# In[2]:
 
 
 nG = 101 # truncation order, the actual truncation order might differ from this
@@ -60,7 +60,68 @@ epsbkg = [1., 1.]
 epsdiff = [3.,5.]
 
 
-# In[15]:
+# In[3]:
+
+
+Qabs = 100.
+def fun_reflection_dof(dof):
+    freqcmp = freq*(1+1j/2/Qabs)
+    obj = rcwa.RCWA_obj(nG,L1,L2,freqcmp,theta,phi,verbose=0)
+    # add all layers in order
+    obj.Add_LayerUniform(thick0,epsuniform0)
+    for i in range(Nlayer):
+        obj.Add_LayerGrid(thickness[i],epsdiff[i],epsbkg[i],Nx,Ny)
+    obj.Add_LayerUniform(thick0,epsuniformN)
+    
+    obj.Init_Setup(Gmethod=0)
+
+    p_amp = 1.
+    p_phase = 0.
+    s_amp = 0.
+    s_phase = 0.
+    obj.MakeExcitationPlanewave(p_amp,p_phase,s_amp,s_phase,order = 0)
+    obj.GridLayer_getDOF(dof)
+    R,_ = obj.RT_Solve(normalize=1)
+    return R
+
+dof = np.random.random(ndof)
+fun = lambda dof: fun_reflection_dof(dof)
+grad_fun = grad(fun)
+test_grad(fun,grad_fun,dof,1e-4,0)
+
+
+# In[10]:
+
+
+Qabs = 100.
+dof = np.random.random(ndof)
+def fun_reflection_t(thickness):
+    freqcmp = freq*(1+1j/2/Qabs)
+    obj = rcwa.RCWA_obj(nG,L1,L2,freqcmp,theta,phi,verbose=0)
+    # add all layers in order
+    obj.Add_LayerUniform(thick0,epsuniform0)
+    for i in range(Nlayer):
+        obj.Add_LayerGrid(thickness[i],epsdiff[i],epsbkg[i],Nx,Ny)
+    obj.Add_LayerUniform(thick0,epsuniformN)
+    
+    obj.Init_Setup(Gmethod=0)
+
+    p_amp = 1.
+    p_phase = 0.
+    s_amp = 0.
+    s_phase = 0.
+    obj.MakeExcitationPlanewave(p_amp,p_phase,s_amp,s_phase,order = 0)
+    obj.GridLayer_getDOF(dof)
+    R,_ = obj.RT_Solve(normalize=1)
+    return R
+
+thickness = np.random.random(Nlayer)
+fun = lambda t: fun_reflection_t(t)
+grad_fun = grad(fun)
+test_grad(fun,grad_fun,dof,1e-4,1)
+
+
+# In[11]:
 
 
 ctrl = 0
@@ -91,7 +152,7 @@ def fun_reflection(dof,Qabs):
         vec = npf.copy(dof)
         
         print(ctrl,R)
-        if npf.mod(ctrl,5)==0:
+        if npf.mod(ctrl,10)==0:
             for i in range(Nlayer):
                 plt.figure();
                 plt.imshow(np.reshape(dof[i*Nx*Ny:(i+1)*Nx*Ny],(Nx,Ny)))
@@ -102,7 +163,7 @@ def fun_reflection(dof,Qabs):
     return R
 
 
-# In[16]:
+# In[12]:
 
 
 Qabs = 20.
